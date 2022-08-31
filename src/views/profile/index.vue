@@ -1,0 +1,249 @@
+<template>
+  <div
+    class="h-[100%] bg-white dark:bg-zinc-800 duration-400 overflow-auto xl:pt-3"
+  >
+    <div
+      class="relative h-[90%] max-w-screen-lg mx-auto bg-white dark:bg-zinc-900 duration-400 xl:rounded-sm xl:border-zinc-200 xl:dark:border-zinc-600 xl:border-[1px] xl:px-4 xl:py-2 xl:shadow-lg"
+    >
+      <!-- 移动端 navbar -->
+      <m-navbar sticky v-if="isMobileTerminal" :clickLeft="onNavbarLeftClick">
+        <span class="text-red-500 text-xl font-you-yuan">个人资料</span>
+      </m-navbar>
+      <!-- pc 端 -->
+      <div
+        v-else
+        class="text-[30px] font-bold text-center mb-4 dark:text-zinc-300"
+      >
+        <span class="text-red-500 font-you-yuan">个人资料</span>
+      </div>
+
+      <div class="h-[100%] w-[100%] px-1 pb-4 text-base mt-2 xl:w-2/3 xl:pb-0">
+        <!-- 头像 -->
+        <div class="py-1 xl:absolute xl:right-[16%] xl:text-center">
+          <span
+            v-if="!isMobileTerminal"
+            class="w-8 font-you-yuan inline-block py-1 font-bold text-base dark:text-zinc-300 xl:block xl:mx-auto"
+            >我的头像</span
+          >
+          <!-- 头像部分 -->
+          <div
+            class="relative w-[80px] h-[80px] group ml-[3.7rem] xl:ml-0 xl:cursor-pointer xl:left-[50%] xl:translate-x-[-50%]"
+            @click="onAvatarClick"
+          >
+            <img
+              v-lazy
+              :src="$store.getters.userInfo.avatar"
+              class="rounded-[50%] w-[100%] h-[100%] xl:inline-block"
+            />
+            <div
+              v-if="$store.getters.userInfo.avatar"
+              class="absolute top-0 rounded-[50%] w-[100%] h-[100%] bg-[rgba(0,0,0,.4)] hidden xl:group-hover:block"
+            >
+              <m-svg-icon
+                name="change-header-image"
+                class="w-2 h-2 m-auto mt-2"
+              ></m-svg-icon>
+
+              <div
+                class="text-xs text-white dark:text-zinc-300 scale-90 mt-0.5"
+              >
+                点击更换头像
+              </div>
+            </div>
+          </div>
+
+          <!-- 隐藏域 -->
+          <input
+            v-show="false"
+            ref="inputFileTarget"
+            type="file"
+            accept=".png, .jpeg, .jpg, .gif"
+            @change="onSelectImgHandler"
+          />
+        </div>
+
+        <!-- 用户名 -->
+        <div class="py-1 xl:flex xl:items-center xl:my-1">
+          <span class="w-8 block mb-1 mr-1 font-bold dark:text-zinc-300 xl:mb-0"
+            >用户名称</span
+          >
+          <m-input
+            v-model="userInfo.nickname"
+            class="w-[100%]"
+            type="text"
+            max="20"
+          ></m-input>
+        </div>
+
+        <!-- 职位 -->
+        <div class="py-1 xl:flex xl:items-center xl:my-1">
+          <span class="w-8 block mb-1 mr-1 font-bold dark:text-zinc-300 xl:mb-0"
+            >职位名称</span
+          >
+          <m-input
+            v-model="userInfo.title"
+            class="w-[100%]"
+            type="text"
+          ></m-input>
+        </div>
+
+        <!-- 公司 -->
+        <div class="py-1 xl:flex xl:items-center xl:my-1">
+          <span class="w-8 block mb-1 mr-1 font-bold dark:text-zinc-300 xl:mb-0"
+            >公司名称</span
+          >
+          <m-input
+            v-model="userInfo.company"
+            class="w-[100%]"
+            type="text"
+          ></m-input>
+        </div>
+
+        <!-- 个人主页 -->
+        <div class="py-1 xl:flex xl:items-center xl:my-1">
+          <span class="w-8 block mb-1 mr-1 font-bold dark:text-zinc-300 xl:mb-0"
+            >个人主页</span
+          >
+          <m-input
+            v-model="userInfo.homePage"
+            class="w-[100%]"
+            type="text"
+          ></m-input>
+        </div>
+
+        <!-- 个人介绍 -->
+        <div class="py-1 xl:flex xl:my-1">
+          <span class="w-8 block mb-1 mr-1 font-bold dark:text-zinc-300 xl:mb-0"
+            >个人介绍</span
+          >
+          <m-input
+            v-model="userInfo.introduction"
+            class="w-[100%]"
+            type="textarea"
+            max="50"
+          ></m-input>
+        </div>
+
+        <!-- 保存修改 -->
+        <m-button
+          class="w-[100%] mt-2 mb-1 dark:text-zinc-300 dark:bg-zinc-800 xl:w-[160px] xl:ml-[50%] xl:translate-x-[-50%]"
+          @click="onChangeProfile"
+          :loading="loading"
+          >保存修改</m-button
+        >
+
+        <!-- 移动端退出登录 -->
+        <m-button
+          v-if="isMobileTerminal"
+          class="w-[100%] dark:text-zinc-300 dark:bg-zinc-800 xl:w-[160px] xl:ml-[50%] xl:translate-x-[-50%]"
+          @click="onLogoutClick"
+        >
+          退出登录
+        </m-button>
+      </div>
+    </div>
+
+    <!-- PC 端 -->
+    <m-dialog
+      v-if="!isMobileTerminal"
+      title="裁剪头像"
+      v-model="isDialogVisible"
+    >
+      <change-avatar-vue
+        @close="isDialogVisible = false"
+        :blob="currentBlob"
+      ></change-avatar-vue>
+    </m-dialog>
+
+    <!-- 移动端 -->
+    <m-popup
+      v-else
+      :class="{ 'h-screen': isDialogVisible }"
+      v-model="isDialogVisible"
+    >
+      <change-avatar-vue
+        @close="isDialogVisible = false"
+        :blob="currentBlob"
+      ></change-avatar-vue>
+    </m-popup>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'profile'
+}
+</script>
+
+<script setup>
+import { isMobileTerminal } from '@/utils/flexible'
+import { confirm } from '@/libs'
+import { useRouter } from 'vue-router'
+import { useStore } from 'vuex'
+import { ref, watch } from 'vue'
+import { putProfile } from '@/api/sys'
+import { message } from '@/libs'
+import ChangeAvatarVue from './components/change-avatar.vue'
+
+const store = useStore()
+const router = useRouter()
+
+//个人信息
+const userInfo = ref(store.getters.userInfo)
+
+// 修改个人信息
+const loading = ref(false)
+const onChangeProfile = async () => {
+  loading.value = true
+  await putProfile(userInfo.value)
+  message('success', '用户信息修改成功')
+  store.commit('user/setUserInfo', userInfo.value)
+  loading.value = false
+}
+
+// 隐藏域
+const inputFileTarget = ref(null)
+
+//更换头像点击事件
+const onAvatarClick = () => {
+  inputFileTarget.value.click()
+}
+//展示 Dialog
+const isDialogVisible = ref(false)
+//选中图片
+const currentBlob = ref('')
+
+//更换头像之后的回调
+const onSelectImgHandler = () => {
+  //获取选中文件
+  const imgFile = inputFileTarget.value.files[0]
+  //生成 blob 对象
+  const blob = URL.createObjectURL(imgFile)
+  //获取选中图片
+  currentBlob.value = blob
+  //展示 Dialog
+  isDialogVisible.value = true
+}
+
+//监听 dialog 关闭
+watch(isDialogVisible, (val) => {
+  if (!val) {
+    inputFileTarget.value.value = null
+  }
+})
+
+//移动端后退处理
+const onNavbarLeftClick = () => {
+    //移动端下跳转的类型
+  store.commit('app/changeRouterType', 'back')
+  router.back()
+}
+
+//移动端 --> 退出登录
+const onLogoutClick = () => {
+  confirm('确定要退出登录吗？').then(() => {
+    store.dispatch('user/logout')
+  })
+}
+
+</script>
